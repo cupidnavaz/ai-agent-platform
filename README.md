@@ -1,2 +1,16 @@
-# ai-agent-platform
-A production-ready, modular AI agent platform for building intelligent assistants with workflow orchestration, tool execution, multi-provider LLM support, retrieval-augmented generation (RAG), and enterprise-grade deployment.
+AI Agent Platform
+
+A production-ready modular AI agent platform for building intelligent assistants.
+
+## Features
+
+- Modular architecture
+- Multi-provider LLM support
+- Tool execution
+- Workflow orchestration
+- Retrieval-Augmented Generation (RAG)
+- Extensible plugin system
+
+## Status
+
+🚧 Under active development.
