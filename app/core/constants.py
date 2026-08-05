@@ -3,13 +3,9 @@
 APP_NAME = "AI Agent Platform"
 APP_VERSION = "0.2.0-alpha.1"
 
-API_PREFIX = "/api/v1"
+HOST = "127.0.0.1"
+PORT = 8000
 
-DEFAULT_HOST = "127.0.0.1"
-DEFAULT_PORT = 8000
+LOG_LEVEL = "INFO"
 
-DEFAULT_LOG_LEVEL = "INFO"
-
-ENV_DEVELOPMENT = "development"
-ENV_TESTING = "testing"
-ENV_PRODUCTION = "production"
+ENVIRONMENT = "development"

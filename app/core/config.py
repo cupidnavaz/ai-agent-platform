@@ -1,5 +1,5 @@
-"""Configuration helpers."""
+"""Application configuration."""
 
-from app.core.settings import get_settings
+from app.core.settings import settings
 
-settings = get_settings()
+__all__ = ["settings"]

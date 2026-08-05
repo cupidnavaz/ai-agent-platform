@@ -1,6 +1,10 @@
 from fastapi import FastAPI
 
+from app.core.config import settings
+from app.core.logging import configure_logging
 from app.core.version import VERSION
+
+configure_logging(settings.log_level)
 
 app = FastAPI(
     title="AI Agent Platform",
