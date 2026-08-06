@@ -1,13 +1,15 @@
-"""Base Provider class."""
+"""Provider base class."""
 
-from dataclasses import dataclass
+from abc import ABC, abstractmethod
 
 
-@dataclass
-class Provider:
+class Provider(ABC):
     """Base AI provider."""
 
-    name: str
+    def __init__(self, name: str):
+        self.name = name
 
-    def generate(self, prompt: str) -> str:
-        raise NotImplementedError("Provider must implement generate().")
+    @abstractmethod
+    def chat(self, messages: list[dict[str, str]]) -> str:
+        """Generate a response from a conversation."""
+        raise NotImplementedError

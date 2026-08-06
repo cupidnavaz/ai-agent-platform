@@ -1,13 +1,14 @@
-"""Mock provider."""
+"""Mock AI provider."""
 
 from app.providers.provider import Provider
 
 
 class MockProvider(Provider):
-    """Testing provider."""
+    """Simple mock provider."""
 
     def __init__(self):
-        super().__init__(name="mock")
+        super().__init__("mock")
 
-    def generate(self, prompt: str) -> str:
-        return f"Mock response: {prompt}"
+    def chat(self, messages: list[dict[str, str]]) -> str:
+        user_message = messages[-1]["content"]
+        return f"Mock response: {user_message}"

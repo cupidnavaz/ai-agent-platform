@@ -1,32 +1,35 @@
-from dataclasses import dataclass, field
+"""Conversation memory."""
+
+from datetime import datetime
+from uuid import uuid4
 
 
-@dataclass
-class Message:
-    role: str
-    content: str
-
-
-@dataclass
 class ConversationMemory:
-    messages: list[Message] = field(default_factory=list)
+    """Stores conversation history."""
 
-    def add(self, role: str, content: str) -> None:
-        self.messages.append(
-            Message(
-                role=role,
-                content=content,
-            )
+    def __init__(self):
+        self._history = []
+
+    def add(
+        self,
+        role: str,
+        content: str,
+        provider: str = "",
+        metadata: dict | None = None,
+    ):
+        self._history.append(
+            {
+                "id": str(uuid4()),
+                "timestamp": datetime.utcnow().isoformat(),
+                "role": role,
+                "content": content,
+                "provider": provider,
+                "metadata": metadata or {},
+            }
         )
 
-    def history(self) -> list[dict[str, str]]:
-        return [
-            {
-                "role": message.role,
-                "content": message.content,
-            }
-            for message in self.messages
-        ]
+    def history(self):
+        return list(self._history)
 
-    def clear(self) -> None:
-        self.messages.clear()
+    def clear(self):
+        self._history.clear()
