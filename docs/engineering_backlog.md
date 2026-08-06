@@ -69,7 +69,58 @@
 - [ ] Message Queue
 
 ---
+# Engineering Backlog
 
+## Core Platform
+
+- [ ] Complete Provider API migration
+- [ ] Runtime stabilization
+- [ ] Storage integration
+- [ ] Session persistence
+- [ ] Logging framework
+- [ ] Configuration system
+- [ ] Plugin loader
+- [ ] Event bus
+
+---
+
+## AI Providers
+
+- [ ] OpenAI
+- [ ] Anthropic (Claude)
+- [ ] Gemini
+- [ ] Ollama
+- [ ] OpenRouter
+
+---
+
+## AI Studio
+
+- [ ] Dashboard
+- [ ] Agent Builder
+- [ ] Prompt Studio
+- [ ] Model Catalog
+- [ ] Knowledge Base
+- [ ] Evaluation Lab
+- [ ] Deployment Manager
+
+---
+
+## API
+
+- [ ] REST API
+- [ ] Authentication
+- [ ] WebSocket streaming
+- [ ] Rate limiting
+
+---
+
+## Frontend
+
+- [ ] Admin Studio
+- [ ] User Workspace
+- [ ] Chat UI
+- [ ] Provider Management
 # Deferred
 
 ## Voice Interface
