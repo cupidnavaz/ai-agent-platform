@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import json
+import os
 from dataclasses import dataclass
+from typing import Iterator
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
@@ -13,6 +15,10 @@ from app.providers.errors import (
     ProviderRateLimitError,
     ProviderResponseError,
     ProviderTimeoutError,
+)
+
+DEBUG_TRANSPORT = (
+    os.getenv("AIEP_DEBUG_TRANSPORT") == "1"
 )
 
 
@@ -65,18 +71,113 @@ class HTTPTransport:
 
         except HTTPError as exc:
 
+            raw_body = exc.read().decode("utf-8")
+
+            if DEBUG_TRANSPORT:
+                print("\n========== PROVIDER ERROR ==========")
+                print(f"HTTP {exc.code}")
+                print(raw_body)
+                print("====================================\n")
+
+            try:
+                body = json.loads(raw_body)
+                message = body.get(
+                    "error",
+                    {},
+                ).get(
+                    "message",
+                    raw_body,
+                )
+            except Exception:
+                message = raw_body
+
             if exc.code == 401:
                 raise ProviderAuthenticationError(
-                    "Authentication failed."
+                    message
                 ) from exc
 
             if exc.code == 429:
                 raise ProviderRateLimitError(
-                    "Rate limit exceeded."
+                    message
                 ) from exc
 
             raise ProviderResponseError(
-                f"HTTP {exc.code}"
+                f"HTTP {exc.code}: {message}"
+            ) from exc
+
+        except URLError as exc:
+
+            raise ProviderConnectionError(
+                str(exc)
+            ) from exc
+
+        except TimeoutError as exc:
+
+            raise ProviderTimeoutError(
+                "Request timed out."
+            ) from exc
+
+    def stream(
+        self,
+        url: str,
+        headers: dict[str, str],
+        payload: dict,
+    ) -> Iterator[str]:
+        """Stream a POST response line by line."""
+
+        request = Request(
+            url=url,
+            data=json.dumps(payload).encode("utf-8"),
+            headers=headers,
+            method="POST",
+        )
+
+        try:
+            with urlopen(
+                request,
+                timeout=self.timeout,
+            ) as response:
+
+                for line in response:
+                    text = line.decode("utf-8").strip()
+
+                    if text:
+                        yield text
+
+        except HTTPError as exc:
+
+            raw_body = exc.read().decode("utf-8")
+
+            if DEBUG_TRANSPORT:
+                print("\n========== PROVIDER ERROR ==========")
+                print(f"HTTP {exc.code}")
+                print(raw_body)
+                print("====================================\n")
+
+            try:
+                body = json.loads(raw_body)
+                message = body.get(
+                    "error",
+                    {},
+                ).get(
+                    "message",
+                    raw_body,
+                )
+            except Exception:
+                message = raw_body
+
+            if exc.code == 401:
+                raise ProviderAuthenticationError(
+                    message
+                ) from exc
+
+            if exc.code == 429:
+                raise ProviderRateLimitError(
+                    message
+                ) from exc
+
+            raise ProviderResponseError(
+                f"HTTP {exc.code}: {message}"
             ) from exc
 
         except URLError as exc:
