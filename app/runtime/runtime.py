@@ -2,38 +2,25 @@
 
 from app.container import Container
 from app.sessions import manager as session_manager
-from app.storage import (
-    SQLiteStorage,
-    MessageRecord,
-)
 
 
 class Runtime:
-    """Central runtime."""
+    """Central runtime for managing assistant sessions."""
 
-    def __init__(self, container: Container):
-        self.container = container
-        self.storage = SQLiteStorage()
-        self._assistants = {}
-        self._storage_sessions = {}
-
-    def create_session(
+    def __init__(
         self,
-        title: str = "New Session",
-    ) -> str:
+        container: Container,
+    ) -> None:
+        self.container = container
+        self._assistants: dict[str, object] = {}
+
+    def create_session(self) -> str:
+        """Create a new runtime session."""
 
         session_id = session_manager.create()
 
         self._assistants[session_id] = (
             self.container.assistant()
-        )
-
-        storage_session = self.storage.create_session(
-            title=title,
-        )
-
-        self._storage_sessions[session_id] = (
-            storage_session.id
         )
 
         return session_id
@@ -42,45 +29,21 @@ class Runtime:
         self,
         session_id: str,
         message: str,
-    ):
+    ) -> str:
+        """Send a message to an assistant."""
 
         assistant = self._assistants.get(session_id)
 
         if assistant is None:
             raise ValueError("Invalid session.")
 
-        storage_session = self._storage_sessions.get(
-            session_id
-        )
-
-        if storage_session is not None:
-
-            self.storage.save_message(
-                MessageRecord(
-                    session_id=storage_session,
-                    role="user",
-                    content=message,
-                )
-            )
-
-        response = assistant.chat(message)
-
-        if storage_session is not None:
-
-            self.storage.save_message(
-                MessageRecord(
-                    session_id=storage_session,
-                    role="assistant",
-                    content=response,
-                )
-            )
-
-        return response
+        return assistant.chat(message)
 
     def history(
         self,
         session_id: str,
     ):
+        """Return chat history."""
 
         assistant = self._assistants.get(session_id)
 
@@ -89,47 +52,12 @@ class Runtime:
 
         return assistant.history()
 
-    def storage_history(
-        self,
-        session_id: str,
-    ):
-
-        storage_session = self._storage_sessions.get(
-            session_id
-        )
-
-        if storage_session is None:
-            raise ValueError("Invalid session.")
-
-        return self.storage.load_messages(
-            storage_session
-        )
-
-    def list_storage_sessions(self):
-
-        return self.storage.list_sessions()
-
     def delete_session(
         self,
         session_id: str,
-    ):
+    ) -> bool:
+        """Delete a runtime session."""
 
-        self._assistants.pop(
-            session_id,
-            None,
-        )
+        self._assistants.pop(session_id, None)
 
-        storage_session = self._storage_sessions.pop(
-            session_id,
-            None,
-        )
-
-        if storage_session:
-
-            self.storage.delete_session(
-                storage_session
-            )
-
-        return session_manager.delete(
-            session_id
-        )
+        return session_manager.delete(session_id)

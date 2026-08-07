@@ -5,11 +5,10 @@ import app.commands.defaults
 from app.commands import router
 from app.memory import ConversationMemory
 from app.prompts import PromptBuilder
-
-from app.providers.provider import Provider
+from app.providers.base import BaseProvider
 from app.providers.models import (
-    Message,
     ChatRequest,
+    Message,
 )
 
 
@@ -18,7 +17,7 @@ class Assistant:
 
     def __init__(
         self,
-        provider: Provider,
+        provider: BaseProvider,
         system_prompt: str = "You are a helpful AI assistant.",
     ) -> None:
         self.provider = provider
@@ -29,11 +28,11 @@ class Assistant:
         self,
         message: str,
     ) -> str:
+        """Process a chat message."""
 
         command_result = router.execute(message)
 
         if command_result is not None:
-
             self.memory.add(
                 role="user",
                 content=message,
@@ -78,7 +77,9 @@ class Assistant:
         return response.content
 
     def history(self):
+        """Return conversation history."""
         return self.memory.history()
 
     def clear(self):
+        """Clear conversation history."""
         self.memory.clear()

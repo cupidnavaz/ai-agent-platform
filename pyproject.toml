@@ -1,15 +1,19 @@
-[project]
-name = "ai-agent-platform"
-version = "0.2.0-alpha.1"
-description = "Production-ready modular AI Agent Platform"
-readme = "README.md"
-requires-python = ">=3.13"
+[tool.black]
+line-length = 79
+target-version = ["py313"]
 
-dependencies = [
-    "fastapi",
-    "uvicorn"
+[tool.isort]
+profile = "black"
+line_length = 79
+
+[tool.ruff]
+line-length = 79
+target-version = "py313"
+
+[tool.ruff.lint]
+select = [
+    "E",
+    "F",
+    "I",
+    "UP",
 ]
-
-[build-system]
-requires = ["setuptools>=61"]
-build-backend = "setuptools.build_meta"

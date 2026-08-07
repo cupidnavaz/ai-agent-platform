@@ -1,6 +1,7 @@
 """SQLite storage implementation."""
 
 import sqlite3
+from datetime import datetime
 
 from app.storage.base import BaseStorage
 from app.storage.models import (
@@ -15,34 +16,38 @@ class SQLiteStorage(BaseStorage):
     def __init__(
         self,
         database: str = "agent.db",
-    ):
+    ) -> None:
         self.connection = sqlite3.connect(database)
         self.connection.row_factory = sqlite3.Row
 
         self._create_tables()
 
-    def _create_tables(self):
+    def _create_tables(self) -> None:
 
         cursor = self.connection.cursor()
 
-        cursor.execute("""
-        CREATE TABLE IF NOT EXISTS sessions(
-            id TEXT PRIMARY KEY,
-            title TEXT,
-            created_at TEXT,
-            updated_at TEXT
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS sessions(
+                id TEXT PRIMARY KEY,
+                title TEXT,
+                created_at TEXT,
+                updated_at TEXT
+            )
+            """
         )
-        """)
 
-        cursor.execute("""
-        CREATE TABLE IF NOT EXISTS messages(
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            session_id TEXT,
-            role TEXT,
-            content TEXT,
-            created_at TEXT
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS messages(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                session_id TEXT,
+                role TEXT,
+                content TEXT,
+                created_at TEXT
+            )
+            """
         )
-        """)
 
         self.connection.commit()
 
@@ -58,7 +63,7 @@ class SQLiteStorage(BaseStorage):
         cursor.execute(
             """
             INSERT INTO sessions
-            VALUES(?,?,?,?)
+            VALUES (?, ?, ?, ?)
             """,
             (
                 session.id,
@@ -75,7 +80,7 @@ class SQLiteStorage(BaseStorage):
     def save_message(
         self,
         message: MessageRecord,
-    ):
+    ) -> None:
 
         cursor = self.connection.cursor()
 
@@ -87,7 +92,7 @@ class SQLiteStorage(BaseStorage):
                 content,
                 created_at
             )
-            VALUES(?,?,?,?)
+            VALUES (?, ?, ?, ?)
             """,
             (
                 message.session_id,
@@ -110,7 +115,7 @@ class SQLiteStorage(BaseStorage):
             """
             SELECT *
             FROM messages
-            WHERE session_id=?
+            WHERE session_id = ?
             ORDER BY id
             """,
             (session_id,),
@@ -121,6 +126,9 @@ class SQLiteStorage(BaseStorage):
                 session_id=row["session_id"],
                 role=row["role"],
                 content=row["content"],
+                created_at=datetime.fromisoformat(
+                    row["created_at"]
+                ),
             )
             for row in rows
         ]
@@ -143,6 +151,12 @@ class SQLiteStorage(BaseStorage):
             SessionRecord(
                 id=row["id"],
                 title=row["title"],
+                created_at=datetime.fromisoformat(
+                    row["created_at"]
+                ),
+                updated_at=datetime.fromisoformat(
+                    row["updated_at"]
+                ),
             )
             for row in rows
         ]
@@ -155,15 +169,19 @@ class SQLiteStorage(BaseStorage):
         cursor = self.connection.cursor()
 
         cursor.execute(
-            "DELETE FROM messages WHERE session_id=?",
+            "DELETE FROM messages WHERE session_id = ?",
             (session_id,),
         )
 
         cursor.execute(
-            "DELETE FROM sessions WHERE id=?",
+            "DELETE FROM sessions WHERE id = ?",
             (session_id,),
         )
 
         self.connection.commit()
 
         return cursor.rowcount > 0
+
+    def close(self) -> None:
+        """Close the database connection."""
+        self.connection.close()

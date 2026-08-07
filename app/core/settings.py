@@ -14,6 +14,8 @@ from app.core.constants import (
 
 @dataclass(slots=True)
 class Settings:
+    """Application configuration."""
+
     app_name: str = APP_NAME
     app_version: str = APP_VERSION
     environment: str = ENVIRONMENT
@@ -22,4 +24,12 @@ class Settings:
     log_level: str = LOG_LEVEL
 
 
-settings = Settings()
+_settings = Settings()
+
+
+def get_settings() -> Settings:
+    """Return the application settings singleton."""
+    return _settings
+
+
+settings = get_settings()
