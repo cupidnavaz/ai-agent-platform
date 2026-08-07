@@ -9,6 +9,7 @@ from app.providers.models import (
     ProviderCapabilities,
 )
 from app.providers.openai_client import OpenAIClient
+from app.providers.openai_config import OpenAIConfig
 from app.providers.serializers import OpenAISerializer
 
 
@@ -17,23 +18,23 @@ class OpenAIProvider(BaseProvider):
 
     def __init__(
         self,
-        api_key: str | None = None,
-        model: str = "gpt-4.1-mini",
+        config: OpenAIConfig | None = None,
         client: OpenAIClient | None = None,
     ) -> None:
         """Initialize the provider."""
 
-        self.model = model
-
         if client is not None:
             self.client = client
-        else:
-            if api_key is None:
-                raise ValueError(
-                    "An API key or OpenAIClient must be provided."
-                )
+            self.model = client.config.model
+            return
 
-            self.client = OpenAIClient(api_key)
+        if config is None:
+            raise ValueError(
+                "An OpenAIConfig or OpenAIClient must be provided."
+            )
+
+        self.model = config.model
+        self.client = OpenAIClient(config)
 
     @property
     def name(self) -> str:

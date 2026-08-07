@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from app.providers.openai_config import OpenAIConfig
 from app.providers.transport import (
     HTTPResponse,
     HTTPTransport,
@@ -13,21 +14,19 @@ class OpenAIClient:
 
     def __init__(
         self,
-        api_key: str,
-        base_url: str = "https://api.openai.com/v1",
-        timeout: float = 30.0,
+        config: OpenAIConfig,
     ) -> None:
+        """Initialize the client."""
 
-        self.api_key = api_key
-        self.base_url = base_url.rstrip("/")
-        self.transport = HTTPTransport(timeout)
+        self.config = config
+        self.transport = HTTPTransport(config.timeout)
 
     @property
     def headers(self) -> dict[str, str]:
         """Return request headers."""
 
         return {
-            "Authorization": f"Bearer {self.api_key}",
+            "Authorization": f"Bearer {self.config.api_key}",
             "Content-Type": "application/json",
         }
 
@@ -39,7 +38,7 @@ class OpenAIClient:
         """Send a POST request."""
 
         return self.transport.post(
-            url=f"{self.base_url}/{endpoint.lstrip('/')}",
+            url=f"{self.config.base_url.rstrip('/')}/{endpoint.lstrip('/')}",
             headers=self.headers,
             payload=payload,
         )
@@ -47,4 +46,4 @@ class OpenAIClient:
     def health(self) -> bool:
         """Basic client health check."""
 
-        return bool(self.api_key)
+        return bool(self.config.api_key)
