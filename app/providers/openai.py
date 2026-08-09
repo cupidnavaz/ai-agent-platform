@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterator
+
 from app.providers.base import BaseProvider
 from app.providers.models import (
     ChatRequest,
@@ -9,8 +11,8 @@ from app.providers.models import (
     ProviderCapabilities,
 )
 from app.providers.openai_client import OpenAIClient
-from app.providers.openai_config import OpenAIConfig
 from app.providers.serializers import OpenAISerializer
+from app.providers.stream import ChatChunk
 
 
 class OpenAIProvider(BaseProvider):
@@ -18,23 +20,18 @@ class OpenAIProvider(BaseProvider):
 
     def __init__(
         self,
-        config: OpenAIConfig | None = None,
+        config,
         client: OpenAIClient | None = None,
     ) -> None:
         """Initialize the provider."""
 
+        self.config = config
+        self.model = config.model
+
         if client is not None:
             self.client = client
-            self.model = client.config.model
-            return
-
-        if config is None:
-            raise ValueError(
-                "An OpenAIConfig or OpenAIClient must be provided."
-            )
-
-        self.model = config.model
-        self.client = OpenAIClient(config)
+        else:
+            self.client = OpenAIClient(config)
 
     @property
     def name(self) -> str:
@@ -69,6 +66,44 @@ class OpenAIProvider(BaseProvider):
         return OpenAISerializer.response(
             response.body,
         )
+
+    def stream_chat(
+        self,
+        request: ChatRequest,
+    ) -> Iterator[ChatChunk]:
+        """Stream chat response chunks."""
+
+        payload = OpenAISerializer.request(
+            request,
+            self.model,
+        )
+
+        payload["stream"] = True
+
+        for event in self.client.stream(
+            "chat/completions",
+            payload,
+        ):
+            choices = event.get("choices", [])
+
+            if not choices:
+                continue
+
+            choice = choices[0]
+            delta = choice.get("delta", {})
+
+            content = delta.get("content")
+
+            if content:
+                yield ChatChunk(
+                    content=content,
+                )
+
+            if choice.get("finish_reason") is not None:
+                yield ChatChunk(
+                    content="",
+                    finished=True,
+                )
 
     def models(self) -> list[str]:
         return [self.model]
