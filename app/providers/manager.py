@@ -1,11 +1,20 @@
 """Provider manager."""
 
+from __future__ import annotations
+
+from collections.abc import Iterator
+
 from app.providers.base import BaseProvider
+from app.providers.models import (
+    ChatRequest,
+    ChatResponse,
+)
 from app.providers.provider_info import ProviderInfo
+from app.providers.stream import ChatChunk
 
 
 class ProviderManager:
-    """Manage AI providers."""
+    """Manage AI providers and route requests."""
 
     def __init__(self) -> None:
         self._providers: dict[str, BaseProvider] = {}
@@ -28,7 +37,12 @@ class ProviderManager:
     ) -> BaseProvider:
         """Return a provider."""
 
-        return self._providers[name]
+        try:
+            return self._providers[name]
+        except KeyError as exc:
+            raise KeyError(
+                f"Unknown provider: {name}"
+            ) from exc
 
     def remove(
         self,
@@ -78,6 +92,36 @@ class ProviderManager:
 
         return self._providers[self._active]
 
+    def chat(
+        self,
+        request: ChatRequest,
+    ) -> ChatResponse:
+        """Send a chat request through the active provider."""
+
+        return self.active().chat(request)
+
+    def stream(
+        self,
+        request: ChatRequest,
+    ) -> Iterator[ChatChunk]:
+        """Stream a chat request through the active provider."""
+
+        provider = self.active()
+
+        stream_chat = getattr(
+            provider,
+            "stream_chat",
+            None,
+        )
+
+        if stream_chat is None:
+            raise NotImplementedError(
+                f"Provider '{provider.name}' "
+                "does not support streaming."
+            )
+
+        return stream_chat(request)
+
     def health(
         self,
     ) -> dict[str, bool]:
@@ -97,7 +141,6 @@ class ProviderManager:
         providers: list[ProviderInfo] = []
 
         for provider in self._providers.values():
-
             providers.append(
                 ProviderInfo(
                     name=provider.name,
@@ -112,21 +155,3 @@ class ProviderManager:
             )
 
         return providers
-
-
-# ==========================================================
-# FUTURE AI STUDIO FEATURES (Private Roadmap)
-#
-# - Provider groups
-# - Automatic failover
-# - Load balancing
-# - Cost tracking
-# - Provider priorities
-# - Rate limiting
-# - Provider benchmarking
-# - Health dashboard
-# - A/B routing
-# - Enterprise policy engine
-#
-# Reserved for future implementation.
-# ==========================================================
