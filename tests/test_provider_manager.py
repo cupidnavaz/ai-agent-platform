@@ -97,7 +97,6 @@ class ProviderManagerTests(unittest.TestCase):
         )
 
         self.assertTrue(info.active)
-
         self.assertTrue(info.healthy)
 
         self.assertEqual(
@@ -120,6 +119,36 @@ class ProviderManagerTests(unittest.TestCase):
     def test_no_active_provider(self):
         with self.assertRaises(RuntimeError):
             self.manager.active()
+
+    def test_resolve_active_provider(self):
+        self.manager.register(self.provider)
+
+        resolved = self.manager.resolve()
+
+        self.assertIs(
+            resolved,
+            self.provider,
+        )
+
+    def test_resolve_named_provider(self):
+        first = RoutingProvider(
+            "first",
+            "First response",
+        )
+        second = RoutingProvider(
+            "second",
+            "Second response",
+        )
+
+        self.manager.register(first)
+        self.manager.register(second)
+
+        resolved = self.manager.resolve("second")
+
+        self.assertIs(
+            resolved,
+            second,
+        )
 
 
 class RoutingProvider(MockProvider):
@@ -266,6 +295,56 @@ class ProviderManagerRoutingTests(unittest.TestCase):
             0,
         )
 
+    def test_chat_routes_by_request_provider(self):
+        request = ChatRequest(
+            messages=[
+                Message(
+                    role="user",
+                    content="Hello",
+                ),
+            ],
+            metadata={
+                "provider": "second",
+            },
+        )
+
+        response = self.manager.chat(request)
+
+        self.assertEqual(
+            response.content,
+            "Second response",
+        )
+
+        self.assertEqual(
+            len(self.first.chat_requests),
+            0,
+        )
+
+        self.assertEqual(
+            len(self.second.chat_requests),
+            1,
+        )
+
+    def test_request_provider_does_not_change_active_provider(self):
+        request = ChatRequest(
+            messages=[
+                Message(
+                    role="user",
+                    content="Hello",
+                ),
+            ],
+            metadata={
+                "provider": "second",
+            },
+        )
+
+        self.manager.chat(request)
+
+        self.assertEqual(
+            self.manager.active().name,
+            "first",
+        )
+
     def test_stream_routes_to_active_provider(self):
         request = ChatRequest(
             messages=[
@@ -337,6 +416,74 @@ class ProviderManagerRoutingTests(unittest.TestCase):
             len(self.first.stream_requests),
             0,
         )
+
+    def test_stream_routes_by_request_provider(self):
+        request = ChatRequest(
+            messages=[
+                Message(
+                    role="user",
+                    content="Say hello.",
+                ),
+            ],
+            metadata={
+                "provider": "second",
+            },
+        )
+
+        chunks = list(
+            self.manager.stream(request)
+        )
+
+        self.assertEqual(
+            [chunk.content for chunk in chunks],
+            [
+                "Hello",
+                " world",
+                "",
+            ],
+        )
+
+        self.assertEqual(
+            len(self.first.stream_requests),
+            0,
+        )
+
+        self.assertEqual(
+            len(self.second.stream_requests),
+            1,
+        )
+
+    def test_unknown_request_provider(self):
+        request = ChatRequest(
+            messages=[
+                Message(
+                    role="user",
+                    content="Hello",
+                ),
+            ],
+            metadata={
+                "provider": "missing",
+            },
+        )
+
+        with self.assertRaises(KeyError):
+            self.manager.chat(request)
+
+    def test_non_string_request_provider(self):
+        request = ChatRequest(
+            messages=[
+                Message(
+                    role="user",
+                    content="Hello",
+                ),
+            ],
+            metadata={
+                "provider": 123,
+            },
+        )
+
+        with self.assertRaises(ValueError):
+            self.manager.chat(request)
 
 
 if __name__ == "__main__":

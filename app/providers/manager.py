@@ -35,7 +35,7 @@ class ProviderManager:
         self,
         name: str,
     ) -> BaseProvider:
-        """Return a provider."""
+        """Return a provider by name."""
 
         try:
             return self._providers[name]
@@ -90,21 +90,60 @@ class ProviderManager:
 
         return self._providers[self._active]
 
+    def resolve(
+        self,
+        provider_name: str | None = None,
+    ) -> BaseProvider:
+        """Resolve a provider by name or return the active provider."""
+
+        if provider_name is None:
+            return self.active()
+
+        return self.get(provider_name)
+
     def chat(
         self,
         request: ChatRequest,
     ) -> ChatResponse:
-        """Send a chat request through the active provider."""
+        """Send a chat request through the selected provider."""
 
-        return self.active().chat(request)
+        provider_name = request.metadata.get(
+            "provider",
+        )
+
+        if provider_name is not None and not isinstance(
+            provider_name,
+            str,
+        ):
+            raise ValueError(
+                "Request provider must be a string."
+            )
+
+        provider = self.resolve(provider_name)
+
+        return provider.chat(request)
 
     def stream(
         self,
         request: ChatRequest,
     ) -> Iterator[ChatChunk]:
-        """Stream a chat request through the active provider."""
+        """Stream a chat request through the selected provider."""
 
-        return self.active().stream_chat(request)
+        provider_name = request.metadata.get(
+            "provider",
+        )
+
+        if provider_name is not None and not isinstance(
+            provider_name,
+            str,
+        ):
+            raise ValueError(
+                "Request provider must be a string."
+            )
+
+        provider = self.resolve(provider_name)
+
+        return provider.stream_chat(request)
 
     def health(
         self,
