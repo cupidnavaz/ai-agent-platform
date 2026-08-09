@@ -63,9 +63,7 @@ class ProviderManager:
     ) -> list[str]:
         """Return registered provider names."""
 
-        return sorted(
-            self._providers.keys()
-        )
+        return sorted(self._providers)
 
     def set_active(
         self,
@@ -106,21 +104,7 @@ class ProviderManager:
     ) -> Iterator[ChatChunk]:
         """Stream a chat request through the active provider."""
 
-        provider = self.active()
-
-        stream_chat = getattr(
-            provider,
-            "stream_chat",
-            None,
-        )
-
-        if stream_chat is None:
-            raise NotImplementedError(
-                f"Provider '{provider.name}' "
-                "does not support streaming."
-            )
-
-        return stream_chat(request)
+        return self.active().stream_chat(request)
 
     def health(
         self,
@@ -138,20 +122,13 @@ class ProviderManager:
     ) -> list[ProviderInfo]:
         """Return provider metadata."""
 
-        providers: list[ProviderInfo] = []
-
-        for provider in self._providers.values():
-            providers.append(
-                ProviderInfo(
-                    name=provider.name,
-                    active=(
-                        provider.name
-                        == self._active
-                    ),
-                    healthy=provider.health(),
-                    models=provider.models(),
-                    capabilities=provider.capabilities,
-                )
+        return [
+            ProviderInfo(
+                name=provider.name,
+                active=provider.name == self._active,
+                healthy=provider.health(),
+                models=provider.models(),
+                capabilities=provider.capabilities,
             )
-
-        return providers
+            for provider in self._providers.values()
+        ]

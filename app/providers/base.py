@@ -45,16 +45,9 @@ class BaseProvider(ABC):
         """Stream a chat request."""
 
         raise NotImplementedError(
-            "Streaming is not implemented."
+            f"Provider '{self.name}' "
+            "does not support streaming."
         )
-
-    def stream(
-        self,
-        request: ChatRequest,
-    ) -> Iterator[ChatChunk]:
-        """Backward-compatible streaming alias."""
-
-        return self.stream_chat(request)
 
     def models(self) -> list[str]:
         """Return supported models."""
