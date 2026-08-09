@@ -1,5 +1,7 @@
 """AI Agent Runtime."""
 
+from __future__ import annotations
+
 from app.container import Container
 from app.sessions import manager as session_manager
 
@@ -11,6 +13,8 @@ class Runtime:
         self,
         container: Container,
     ) -> None:
+        """Initialize the runtime."""
+
         self.container = container
         self._assistants: dict[str, object] = {}
 
@@ -30,12 +34,11 @@ class Runtime:
         session_id: str,
         message: str,
     ) -> str:
-        """Send a message to an assistant."""
+        """Send a message to an assistant session."""
 
-        assistant = self._assistants.get(session_id)
-
-        if assistant is None:
-            raise ValueError("Invalid session.")
+        assistant = self._get_assistant(
+            session_id
+        )
 
         return assistant.chat(message)
 
@@ -43,14 +46,25 @@ class Runtime:
         self,
         session_id: str,
     ):
-        """Return chat history."""
+        """Return chat history for a session."""
 
-        assistant = self._assistants.get(session_id)
-
-        if assistant is None:
-            raise ValueError("Invalid session.")
+        assistant = self._get_assistant(
+            session_id
+        )
 
         return assistant.history()
+
+    def clear_history(
+        self,
+        session_id: str,
+    ) -> None:
+        """Clear chat history for a session."""
+
+        assistant = self._get_assistant(
+            session_id
+        )
+
+        assistant.clear()
 
     def delete_session(
         self,
@@ -58,6 +72,28 @@ class Runtime:
     ) -> bool:
         """Delete a runtime session."""
 
-        self._assistants.pop(session_id, None)
+        self._assistants.pop(
+            session_id,
+            None,
+        )
 
-        return session_manager.delete(session_id)
+        return session_manager.delete(
+            session_id
+        )
+
+    def _get_assistant(
+        self,
+        session_id: str,
+    ):
+        """Return the assistant for a session."""
+
+        assistant = self._assistants.get(
+            session_id
+        )
+
+        if assistant is None:
+            raise ValueError(
+                "Invalid session."
+            )
+
+        return assistant
